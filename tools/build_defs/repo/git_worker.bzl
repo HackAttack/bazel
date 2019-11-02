@@ -96,11 +96,10 @@ def git_repo(ctx, directory):
     return struct(commit = actual_commit, shallow_since = shallow_date)
 
 def _update(ctx, git_repo):
-    ctx.delete(git_repo.directory)
-
     init(ctx, git_repo)
     add_origin(ctx, git_repo, ctx.attr.remote)
     fetch(ctx, git_repo)
+    deinit_submodules(ctx, git_repo)
     reset(ctx, git_repo)
     clean(ctx, git_repo)
 
@@ -115,6 +114,7 @@ def init(ctx, git_repo):
         _error(ctx.name, cl, st.stderr)
 
 def add_origin(ctx, git_repo, remote):
+    _execute(ctx, git_repo, ["remote", "remove", "origin"])
     _git(ctx, git_repo, "remote", "add", "origin", remote)
 
 def fetch(ctx, git_repo):
@@ -142,6 +142,9 @@ def reset(ctx, git_repo):
 
 def clean(ctx, git_repo):
     _git(ctx, git_repo, "clean", "-xdf")
+
+def deinit_submodules(ctx, git_repo):
+    _git(ctx, git_repo, "submodule", "deinit", "--all", "--force")
 
 def update_submodules(ctx, git_repo):
     _git(ctx, git_repo, "submodule", "update", "--init", "--checkout", "--force")
